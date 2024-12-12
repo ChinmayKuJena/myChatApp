@@ -74,8 +74,8 @@
     <div id="room-section">
         <label for="userName">Enter Your Name:</label>
         <input type="text" id="userName" placeholder="Your Name">
-        <label for="roomId">Enter Room ID:</label>
-        <input type="text" id="roomId" placeholder="Room ID">
+        <!-- <label for="roomId">Enter Room ID:</label>
+        <input type="text" id="roomId" placeholder="Room ID"> -->
         <button id="joinRoom">Join Room</button>
     </div>
 
@@ -93,21 +93,23 @@
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
     <script>
-        const socket = io('ws://localhost:3000'); // Connect to WebSocket server
+        const socket = io(`ws://${window.location.hostname}:3000`);
+
         let roomId = '';
         let userName = '';
 
         // Join Room
         document.getElementById('joinRoom').addEventListener('click', () => {
-            roomId = document.getElementById('roomId').value;
+            //roomId = document.getElementById(roomId).value;
             userName = document.getElementById('userName').value;
 
-            if (!roomId || !userName) {
+            if (!userName) {
                 return alert('Please enter both Room ID and Your Name');
             }
 
             socket.emit('joinRoom', { roomId, userName }); // Emit both roomId and userName
             document.getElementById('chat-section').style.display = 'block'; // Show the chat section
+            document.getElementById('room-section').style.display = 'none'; // Hide the join section
         });
 
         // Send Message
@@ -120,16 +122,26 @@
             document.getElementById('message').value = ''; // Clear input field
         });
 
-        // Receive Message
+        // Receive New Message
         socket.on('message', (data) => {
+            displayMessage(data.userName, data.message);
+        });
+
+        // Receive Previous Messages
+        socket.on('previousMessages', (messages) => {
+            messages.forEach((msg) => displayMessage(msg.userName, msg.message));
+        });
+
+        // Helper function to display messages
+        function displayMessage(sender, message) {
             const messagesDiv = document.getElementById('messages');
             const messageElement = document.createElement('div');
-            messageElement.textContent = `${data.userName}: ${data.message}`;
+            messageElement.textContent = `${sender}: ${message}`;
             messagesDiv.appendChild(messageElement);
 
             // Auto-scroll to the latest message
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        });
+        }
     </script>
 </body>
 </html>
