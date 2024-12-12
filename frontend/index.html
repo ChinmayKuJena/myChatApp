@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            height: 100vh;
+        }
+
+        #room-section {
+            margin-top: 20px;
+        }
+
+        #chat-section {
+            display: none;
+            margin-top: 20px;
+            width: 80%;
+            max-width: 600px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        #messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fafafa;
+        }
+
+        #messages div {
+            margin-bottom: 8px;
+        }
+
+        #message-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            cursor: pointer;
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Section to enter Room ID and User Name -->
+    <div id="room-section">
+        <label for="userName">Enter Your Name:</label>
+        <input type="text" id="userName" placeholder="Your Name">
+        <label for="roomId">Enter Room ID:</label>
+        <input type="text" id="roomId" placeholder="Room ID">
+        <button id="joinRoom">Join Room</button>
+    </div>
+
+    <!-- Chat Section -->
+    <div id="chat-section">
+        <h2>Chat Room</h2>
+        <div id="messages"></div>
+        <div id="message-input">
+            <input type="text" id="message" placeholder="Type your message here">
+            <button id="sendMessage">Send</button>
+        </div>
+    </div>
+
+    <!-- Include Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+    <script>
+        const socket = io('http://localhost:3000'); // Connect to WebSocket server
+        let roomId = '';
+        let userName = '';
+
+        // Join Room
+        document.getElementById('joinRoom').addEventListener('click', () => {
+            roomId = document.getElementById('roomId').value;
+            userName = document.getElementById('userName').value;
+
+            if (!roomId || !userName) {
+                return alert('Please enter both Room ID and Your Name');
+            }
+
+            socket.emit('joinRoom', { roomId, userName }); // Emit both roomId and userName
+            document.getElementById('chat-section').style.display = 'block'; // Show the chat section
+        });
+
+        // Send Message
+        document.getElementById('sendMessage').addEventListener('click', () => {
+            const message = document.getElementById('message').value;
+            if (!message) return;
+
+            // Emit message to the room along with userName
+            socket.emit('message', { roomId, userName, message });
+            document.getElementById('message').value = ''; // Clear input field
+        });
+
+        // Receive Message
+        socket.on('message', (data) => {
+            const messagesDiv = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = `${data.userName}: ${data.message}`;
+            messagesDiv.appendChild(messageElement);
+
+            // Auto-scroll to the latest message
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+    </script>
+</body>
+</html>
